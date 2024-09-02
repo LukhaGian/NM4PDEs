@@ -1,0 +1,58 @@
+// Author: Gian Lukha–Lucca
+// MAT: 250759
+
+// Consider the problem
+// -Δu = f in Ω
+//   u = g on ∂Ω
+// where Ω = (0,1) x (0,1)
+
+// Case a): f(x,y) = -4 and g(x,y) = (x − 4/3)^2 + (y + 1)^2 
+///////////////////////////////////////////////////////////
+func f = -4;
+func g = (x-4/3)^2 + (y+1)^2;
+func uex = (x-4/3)^2 + (y+1)^2; // exact solution
+func dxuex = 2*x-8/3; // 1st derivative wrt x of the exact solution
+func dyuex = 2*y+2; // 1st derivative wrt y of the exact solution
+
+// Case b): f(x,y) = 0 and g(x,y) = log[(x - 3/4)^2 + (y + 1)^2] 
+///////////////////////////////////////////////////////////
+// func f = 0;
+// func g = log((x - 3/4)^2 + (y + 1)^2);
+// func uex = log((x - 3/4)^2 + (y + 1)^2); // exact solution
+// func dxuex = 2*(x - 3/4)/((x - 3/4)^2 + (y + 1)^2); // 1st derivative wrt x of the exact solution
+// func dyuex = 2*(y + 1)/((x - 3/4)^2 + (y + 1)^2); // 1st derivative wrt y of the exact solution
+
+int m = 6;
+real[int] errnfty(m+1);
+real[int] errL2(m+1);
+real[int] errgrad(m+1);
+// First mesh type
+cout << "For the first mesh type:" << endl;
+for (int k = 2; k <= m; k++){
+    mesh Th = square(2^k, 2^k); // mesh generation
+    if (k == 2)
+        plot(Th, wait=true);
+    fespace Vh(Th, P1); // generate the pw linear space
+    Vh uh, v;
+    Vh uinterp = uex; // interpolate the exact solution over Vh
+    solve Poisson(uh, v) = int2d(Th)(dx(uh)*dx(v) + dy(uh)*dy(v))- int2d(Th)(f*v) // weak formulation
+                           + on(1, uh = g) + on(2, uh = g) + on(3, uh = g) + on(4, uh = g); // here the boundaries are labelled automatically as 1,2,3,4
+    if (k == m-2)
+        plot(Th, uh, fill=1, wait=true);
+    Vh diff = uinterp - uh; // difference of the interpolation of uex and uh
+    errnfty[k] = diff[].linfty; // compute the L infinity norm of the difference
+    errL2[k] = sqrt(int2d(Th)((uex - uh)^2)); // L2 error
+    errgrad[k] = sqrt(int2d(Th)((dxuex - dx(uh))^2 + (dyuex - dy(uh))^2)); // L2 error of gradient
+    cout << "errLinfinity = " << errnfty[k] << endl; 
+    cout << "errL2 = " << errL2[k] << endl;  
+    cout << "errL2 of the gradient = " << errgrad[k] << endl;               
+}
+real rateLnfty = log(errnfty[m-1] / errnfty[m]) / log(2.0);
+real rateL2 = log(errL2[m-1] / errL2[m]) / log(2.0);
+real rategrad = log(errgrad[m-1] / errgrad[m]) / log(2.0);
+cout << " convergence rate LInfinity = " << rateLnfty << endl;
+cout << " convergence rate L2 = " << rateL2 << endl;
+cout << " convergence rate L2 of gradient = " << rategrad << endl;
+
+
+
